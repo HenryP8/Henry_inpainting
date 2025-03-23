@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from models.ffc import FFC
-# from models.ffc_deprecated import FFC_BN_ACT
 
 
 class FFCGenerator(nn.Module):
@@ -19,8 +18,7 @@ class FFCGenerator(nn.Module):
                 nn.BatchNorm2d(128*(2**i)),
                 nn.ReLU()
             ]
-        self.downsample += [#FFC_BN_ACT(64*(2**(i+1)), 128*(2**(i+1)), kernel_size=3, stride=2, padding=1, ratio_gin=0, ratio_gout=0.75, norm_layer=nn.BatchNorm2d, activation_layer=nn.ReLU)
-                            Splitter(64*(2**(i+1)), 128*(2**(i+1)), 0.75, kernel_size=3, stride=2, padding=1)]
+        self.downsample += [Splitter(64*(2**(i+1)), 128*(2**(i+1)), 0.75, kernel_size=3, stride=2, padding=1)]
         self.downsample = nn.Sequential(*self.downsample)
 
         # FCC Blocks
@@ -56,8 +54,6 @@ class FFC_block(nn.Module):
     def __init__(self, dims):
         super().__init__()
 
-        #self.ffc1 = FFC_BN_ACT(dims, dims, kernel_size=3, padding=1, ratio_gin=0.75, ratio_gout=0.75)
-        #self.ffc2 = FFC_BN_ACT(dims, dims, kernel_size=3, padding=1, ratio_gin=0.75, ratio_gout=0.75)
         self.ffc1 = FFC(dims, 0.75)
         self.ffc2 = FFC(dims, 0.75)
 
