@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class FFC(nn.Module):
     def __init__(self, dims, ratio_g, kernel_size=3, stride=1, padding=1):
-        super().__init__()
+        super(FFC, self).__init__()
 
         dim_g = int(ratio_g * dims)
         dim_l = dims - dim_g
@@ -14,6 +14,11 @@ class FFC(nn.Module):
         self.f_g2l = nn.Conv2d(dim_g, dim_l, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode='reflect', bias=False)
         self.f_g2g = SpectralTransform(dim_g, dim_g, stride=1)
 
+        self.norm_l = nn.BatchNorm2d(dim_l)
+        self.activation_l = nn.ReLU()
+        self.norm_g = nn.BatchNorm2d(dim_g)
+        self.activation_g = nn.ReLU()
+
     def forward(self, x):
         x_l, x_g = x
 
@@ -22,12 +27,15 @@ class FFC(nn.Module):
         x_g2l = self.f_g2l(x_g)
         x_g2g = self.f_g2g(x_g)
 
-        return x_l2l + x_g2l, x_l2g + x_g2g
+        x_l, x_g = x_l2l + x_g2l, x_l2g + x_g2g
+        x_l, x_g = self.activation_l(self.norm_l(x_l)), self.activation_g(self.norm_g(x_g))
+
+        return x_l, x_g
 
 
 class SpectralTransform(nn.Module):
     def __init__(self, in_dim, out_dim, stride=1):
-        super().__init__()
+        super(SpectralTransform, self).__init__()
 
         self.chennel_reduction = nn.Sequential(
             nn.Conv2d(in_dim, out_dim // 2, kernel_size=1, stride=stride, bias=False),
@@ -47,7 +55,7 @@ class SpectralTransform(nn.Module):
 
 class FourierUnit(nn.Module):
     def __init__(self, in_dim, out_dim):
-        super().__init__()
+        super(FourierUnit, self).__init__()
 
         self.conv = nn.Conv2d(in_dim*2, out_dim*2, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn = nn.BatchNorm2d(out_dim * 2)

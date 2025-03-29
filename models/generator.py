@@ -7,7 +7,7 @@ from models.ffc import FFC
 
 class FFCGenerator(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(FFCGenerator, self).__init__()
 
         # Downsample
         self.downsample = [nn.ReflectionPad2d(3),
@@ -42,17 +42,20 @@ class FFCGenerator(nn.Module):
                           nn.Conv2d(64, 3, kernel_size=7, padding=0)]
         self.upsample = nn.Sequential(*self.upsample)
 
+        self.final_act = nn.Sigmoid()
+
     def forward(self, x):
         x = self.downsample(x)
         x = self.ffc(x)
         x = self.joiner(x)
         x = self.upsample(x)
+        x = self.final_act(x)
         return x
 
 
 class FFC_block(nn.Module):
     def __init__(self, dims):
-        super().__init__()
+        super(FFC_block, self).__init__()
 
         self.ffc1 = FFC(dims, 0.75)
         self.ffc2 = FFC(dims, 0.75)
@@ -70,7 +73,7 @@ class FFC_block(nn.Module):
 
 class Splitter(nn.Module):
     def __init__(self, in_dim, out_dim, ratio_g, kernel_size=3, stride=2, padding=1):
-        super().__init__()
+        super(Splitter, self).__init__()
 
         out_dim_g = int(out_dim * ratio_g)
         out_dim_l = out_dim - out_dim_g
@@ -94,7 +97,7 @@ class Splitter(nn.Module):
 
 class Joiner(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(Joiner, self).__init__()
 
     def forward(self, x):
         return torch.cat(x, dim=1)
