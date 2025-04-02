@@ -42,7 +42,7 @@ class FFCGenerator(nn.Module):
                           nn.Conv2d(64, 3, kernel_size=7, padding=0)]
         self.upsample = nn.Sequential(*self.upsample)
 
-        self.final_act = nn.Sigmoid()
+        self.final_act = nn.Tanh()
 
     def forward(self, x):
         x = self.downsample(x)
