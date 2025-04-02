@@ -74,7 +74,7 @@ class FourierUnit(nn.Module):
         z = torch.fft.irfftn(y_ri, dim=(-2, -1), norm='ortho')
         return z
 
-        # Pseudo code from FFC paper
+        # Pseudo code from FFC paper for fourier unit
         # y_r, y_i = FFT(x) # y_r/y_i: [N,C,H,b floor(W/2)+1]
         # y = Concatenate([y_r, y_i], dim=1) # [N,C∗2,H,b floor(W/2)+1]
         # y = ReLU(BN(Conv(y))) # [N,C∗2,H,b floor(W/2)+1]
