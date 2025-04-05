@@ -2,9 +2,6 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch
 
-from models.generator import FFCGenerator
-from models.discriminator import Discriminator
-
 
 class GeneratorAdversarialLoss(nn.Module):
     def __init__(self, discriminator):
@@ -12,7 +9,7 @@ class GeneratorAdversarialLoss(nn.Module):
         self.discriminator = discriminator
 
     def forward(self, fake, mask):
-        disc_fake = self.discriminator(fake)
+        disc_fake, _ = self.discriminator(fake)
         loss = F.softplus(-disc_fake)
 
         interp_mask = F.interpolate(mask, size=loss.shape[-2:], mode='bilinear', align_corners=False)
@@ -29,8 +26,8 @@ class DiscriminatorAdversarialLoss(nn.Module):
     def forward(self, fake, real, mask):
         real.requires_grad = True
 
-        disc_real = self.discriminator(real)
-        disc_fake = self.discriminator(fake)
+        disc_real, _ = self.discriminator(real)
+        disc_fake, _ = self.discriminator(fake)
 
         if torch.is_grad_enabled():
             grad_real = torch.autograd.grad(outputs=disc_real.sum(), inputs=real, create_graph=True)[0]
