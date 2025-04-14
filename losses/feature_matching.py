@@ -15,14 +15,11 @@ class FeatureMatchingLoss(nn.Module):
         _, real_features = self.discriminator(real)
         _, fake_features = self.discriminator(fake)
 
-        res = 0
-        norm = 0
-        for fake_feat, target_feat in zip(fake_features, real_features):
-            cur_mask = F.interpolate(mask, size=fake_feat.shape[-2:], mode='bilinear', align_corners=False)
-            error_weights = 1 - cur_mask
-            cur_val = ((fake_feat - target_feat).pow(2) * error_weights).mean()
-            res = res + cur_val
-            norm += 1
-        res = res / norm
-        return res
+        loss = 0
+        for real_feat, fake_feat in zip(real_features, fake_features):
+            mask_interp = F.interpolate(1-mask, size=fake_feat.shape[-2:], mode='bilinear', align_corners=False)
+            mask_weights = 1 - mask_interp
+            loss += (F.mse_loss(real_feat, fake_feat, reduction='none') * mask_weights).mean()
+            
+        return loss / len(fake_features)
     
