@@ -12,7 +12,7 @@ class GeneratorAdversarialLoss(nn.Module):
         disc_fake, _ = self.discriminator(fake)
         loss = F.softplus(-disc_fake)
 
-        interp_mask = F.interpolate(mask, size=loss.shape[-2:], mode='bilinear', align_corners=False)
+        interp_mask = F.interpolate(1-mask, size=loss.shape[-2:], mode='bilinear', align_corners=False)
         loss *= interp_mask
 
         return loss.mean()
@@ -39,7 +39,7 @@ class DiscriminatorAdversarialLoss(nn.Module):
         real_loss = F.softplus(-disc_real)
         fake_loss = F.softplus(disc_fake)
 
-        interp_mask = F.interpolate(mask, size=fake_loss.shape[-2:], mode='bilinear', align_corners=False)
+        interp_mask = F.interpolate(1-mask, size=fake_loss.shape[-2:], mode='bilinear', align_corners=False)
         fake_loss *= interp_mask
 
         return (real_loss + 0.001 *gradient_penalty + fake_loss).mean()

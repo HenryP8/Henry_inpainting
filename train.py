@@ -1,6 +1,5 @@
 import torch
 import numpy as np
-import cv2
 from torchvision.datasets import Places365
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
@@ -14,6 +13,7 @@ from dataloader.dataset import MaskedImgDataset
 from losses.l1_loss import L1_Loss
 from losses.adversarial import GeneratorAdversarialLoss, DiscriminatorAdversarialLoss
 from losses.feature_matching import FeatureMatchingLoss
+from losses.perceptual import PerceptualLoss
 
 import os
 import time
@@ -42,7 +42,7 @@ def imsave(img, fn):
     plt.imsave(fn, np.transpose(npimg, (1, 2, 0)))
 
 
-device= 'cuda'
+device = 'cuda'
 generator = FFCGenerator().to(device)
 discriminator = Discriminator().to(device)
 
@@ -53,8 +53,9 @@ criterion_l1 = L1_Loss().to(device)
 criterion_g = GeneratorAdversarialLoss(discriminator).to(device)
 criterion_d = DiscriminatorAdversarialLoss(discriminator).to(device)
 criterion_f = FeatureMatchingLoss(discriminator).to(device)
+criterion_p = PerceptualLoss().to(device)
 
-num_epochs = 1
+num_epochs = 5
 
 for epoch in range(num_epochs):
     for batch_idx, (images, reals, masks, _) in enumerate(tqdm(train_loader)):
@@ -70,7 +71,9 @@ for epoch in range(num_epochs):
 
         loss_feature_match = criterion_f(fakes, reals, masks)
 
-        loss_g = loss_l1 + 10 * loss_adv + 100 * loss_feature_match
+        perceptual_loss = criterion_p(fakes, reals)
+
+        loss_g = loss_l1 + 10 * loss_adv + 100 * loss_feature_match + 30 * perceptual_loss
 
         if batch_idx % 1000 == 0 or batch_idx == len(train_loader) - 1:
             imsave(fakes.cpu().detach()[0], f'results/{epoch}_{batch_idx}.png')
@@ -85,18 +88,3 @@ for epoch in range(num_epochs):
 
 model_name = time.strftime("%Y%m%d-%H%M%S")
 torch.save(generator.state_dict(), f'saved_models/{model_name}')
-
-model = FFCGenerator()
-model.load_state_dict(torch.load(f'saved_models/{model_name}', weights_only=True))
-model.eval()
-model = model.to(device)
-
-for batch_idx, (input_images, targets, _, images) in enumerate(test_loader):
-    for target, img in zip(targets, images):
-        imshow(img)
-        plt.show()
-        pred = model(input_images.to(device))
-        imshow(pred.cpu().detach()[0])
-        plt.show()
-        imshow(target)
-        plt.show()

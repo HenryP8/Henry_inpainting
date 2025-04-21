@@ -26,7 +26,7 @@ class MaskedImgDataset(Dataset):
         target = cv2.imread(self.img_paths[idx])
         target = cv2.cvtColor(target, cv2.COLOR_BGR2RGB)
 
-        mask = gen_mask(256, 256)
+        mask = gen_mask(256, 256, num_masks=2)
         masked_img = (target * mask).astype(np.uint8)
 
         masked_img_4d = torch.Tensor(

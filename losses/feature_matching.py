@@ -17,8 +17,8 @@ class FeatureMatchingLoss(nn.Module):
 
         loss = 0
         for real_feat, fake_feat in zip(real_features, fake_features):
-            mask_interp = F.interpolate(1-mask, size=fake_feat.shape[-2:], mode='bilinear', align_corners=False)
-            mask_weights = 1 - mask_interp
+            interp_mask = F.interpolate(1-mask, size=fake_feat.shape[-2:], mode='bilinear', align_corners=False)
+            mask_weights = 1 - interp_mask
             loss += (F.mse_loss(real_feat, fake_feat, reduction='none') * mask_weights).mean()
             
         return loss / len(fake_features)
