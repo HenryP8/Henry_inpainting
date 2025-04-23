@@ -34,6 +34,7 @@ def imsave(img, fn):
 num_epochs = 25
 warmup_epochs = 1
 
+model_name = time.strftime("%Y%m%d-%H%M%S")
 device = 'cuda'
 generator = FFCGenerator().to(device)
 discriminator = Discriminator().to(device)
@@ -87,5 +88,7 @@ for epoch in range(num_epochs):
     print(f'Epoch: {epoch+1}\nG lr: {optimizer_g.param_groups[0]['lr']}\nD lr: {optimizer_d.param_groups[0]['lr']}')
     print(f'Loss g: {loss_g.item()}\nLoss d: {loss_d.item()}')
 
-model_name = time.strftime("%Y%m%d-%H%M%S")
+    if epoch % 5 == 0:
+        torch.save(generator.state_dict(), f'saved_models/{model_name}_epoch_{epoch}')
+
 torch.save(generator.state_dict(), f'saved_models/{model_name}')
