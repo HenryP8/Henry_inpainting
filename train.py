@@ -21,19 +21,8 @@ import time
 
 torch.manual_seed(0)
 
-all_data = MaskedImgDataset('data/data_256_standard')
-train_data, test_data, _ = random_split(all_data, [50_000, 15_000, len(all_data) - 65_000])
-train_loader = DataLoader(train_data, shuffle=True)
-test_loader = DataLoader(test_data, shuffle=True)
-
 subset_data = MaskedImgDataset('data/places_subset_15000')
 train_loader = DataLoader(subset_data, shuffle=True)
-
-def imshow(img):
-    img = 0.5 * img + 0.5
-    npimg = img.numpy()
-    plt.imshow(np.transpose(npimg, (1, 2, 0)))
-    plt.axis('off')
 
 
 def imsave(img, fn):
@@ -42,20 +31,26 @@ def imsave(img, fn):
     plt.imsave(fn, np.transpose(npimg, (1, 2, 0)))
 
 
+num_epochs = 5
+warmup_epochs = 1
+
 device = 'cuda'
 generator = FFCGenerator().to(device)
 discriminator = Discriminator().to(device)
 
-optimizer_g = optim.AdamW(generator.parameters(), lr=0.001)
-optimizer_d = optim.AdamW(discriminator.parameters(), lr=0.001)
+optimizer_g = optim.AdamW(generator.parameters(), lr=1e-3)
+optimizer_d = optim.AdamW(discriminator.parameters(), lr=1e-4)
+
+lr_warmup_g = optim.lr_scheduler.LinearLR(optimizer_g, start_factor=0.01, end_factor=1, total_iters=warmup_epochs)
+lr_cos_g = optim.lr_scheduler.CosineAnnealingLR(optimizer_g, T_max=num_epochs-warmup_epochs, eta_min=1e-5)
+lr_scheduler_g = optim.lr_scheduler.SequentialLR(optimizer_g, schedulers=[lr_warmup_g, lr_cos_g], milestones=[warmup_epochs])
+lr_scheduler_d = optim.lr_scheduler.StepLR(optimizer_d, step_size=3, gamma=0.5)
 
 criterion_l1 = L1_Loss().to(device)
 criterion_g = GeneratorAdversarialLoss(discriminator).to(device)
 criterion_d = DiscriminatorAdversarialLoss(discriminator).to(device)
 criterion_f = FeatureMatchingLoss(discriminator).to(device)
 criterion_p = PerceptualLoss().to(device)
-
-num_epochs = 5
 
 for epoch in range(num_epochs):
     for batch_idx, (images, reals, masks, _) in enumerate(tqdm(train_loader)):
@@ -85,6 +80,11 @@ for epoch in range(num_epochs):
         optimizer_d.zero_grad()
         loss_d.backward()
         optimizer_d.step()
+
+    lr_scheduler_g.step()
+    lr_scheduler_d.step()
+
+    print(f'Epoch: {epoch+1}\nG lr: {optimizer_g.param_groups[0]['lr']}\nD lr: {optimizer_d.param_groups[0]['lr']}')
 
 model_name = time.strftime("%Y%m%d-%H%M%S")
 torch.save(generator.state_dict(), f'saved_models/{model_name}')
