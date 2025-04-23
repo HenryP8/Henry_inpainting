@@ -31,7 +31,7 @@ def imsave(img, fn):
     plt.imsave(fn, np.transpose(npimg, (1, 2, 0)))
 
 
-num_epochs = 5
+num_epochs = 25
 warmup_epochs = 1
 
 device = 'cuda'
@@ -42,9 +42,9 @@ optimizer_g = optim.AdamW(generator.parameters(), lr=1e-3)
 optimizer_d = optim.AdamW(discriminator.parameters(), lr=1e-4)
 
 lr_warmup_g = optim.lr_scheduler.LinearLR(optimizer_g, start_factor=0.01, end_factor=1, total_iters=warmup_epochs)
-lr_cos_g = optim.lr_scheduler.CosineAnnealingLR(optimizer_g, T_max=num_epochs-warmup_epochs, eta_min=1e-5)
+lr_cos_g = optim.lr_scheduler.CosineAnnealingLR(optimizer_g, T_max=num_epochs-warmup_epochs, eta_min=1e-4)
 lr_scheduler_g = optim.lr_scheduler.SequentialLR(optimizer_g, schedulers=[lr_warmup_g, lr_cos_g], milestones=[warmup_epochs])
-lr_scheduler_d = optim.lr_scheduler.StepLR(optimizer_d, step_size=3, gamma=0.5)
+lr_scheduler_d = optim.lr_scheduler.StepLR(optimizer_d, step_size=5, gamma=0.5)
 
 criterion_l1 = L1_Loss().to(device)
 criterion_g = GeneratorAdversarialLoss(discriminator).to(device)
@@ -85,6 +85,7 @@ for epoch in range(num_epochs):
     lr_scheduler_d.step()
 
     print(f'Epoch: {epoch+1}\nG lr: {optimizer_g.param_groups[0]['lr']}\nD lr: {optimizer_d.param_groups[0]['lr']}')
+    print(f'Loss g: {loss_g.item()}\nLoss d: {loss_d.item()}')
 
 model_name = time.strftime("%Y%m%d-%H%M%S")
 torch.save(generator.state_dict(), f'saved_models/{model_name}')
