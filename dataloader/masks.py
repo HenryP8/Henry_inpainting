@@ -3,15 +3,16 @@ import numpy as np
 import random
 
 
-def gen_mask(height, width, num_masks=2):
+def gen_mask(height, width, num_masks='random'):
     mask = np.ones((height, width))
+    num_masks = random.randint(3, 5) if num_masks == 'random' else num_masks
 
     for _ in range(num_masks):
-        mask_width = random.randint(90, 210)
-        mask_height = random.randint(90, 210)
+        mask_width = random.randint(75, 175)
+        mask_height = random.randint(75, 175)
 
-        mask_x = random.randint(0, width-90)
-        mask_y = random.randint(0, height-90)
+        mask_x = random.randint(0, width-mask_width)
+        mask_y = random.randint(0, height-mask_height)
 
         cv2.rectangle(mask, (mask_x, mask_y), (mask_x + mask_width, mask_y + mask_height), 0, -1)
 

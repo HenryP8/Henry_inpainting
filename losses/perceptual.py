@@ -14,7 +14,7 @@ class PerceptualLoss(nn.Module):
         for param in self.model.parameters():
             param.require_grad = False
 
-    def forward(self, fake, real):
+    def forward(self, fake, real, mask):
         loss = torch.zeros(fake.shape[0]).to(self.device)
         c = 0
         
@@ -24,7 +24,14 @@ class PerceptualLoss(nn.Module):
 
             if module.__class__.__name__ == 'ReLU':
                 layer_loss = F.mse_loss(fake, real, reduction='none')
+                interp_mask = F.interpolate(mask, size=layer_loss.shape[-2:], mode='bilinear', align_corners=False)
+                layer_loss *= interp_mask
+
                 loss += layer_loss.mean(dim=tuple(range(4)[1:]))
                 c += 1
 
         return (loss/c).sum()
+    
+
+if __name__ == '__main__':
+    model = PerceptualLoss()
