@@ -3,13 +3,13 @@ import numpy as np
 import random
 
 
-def gen_mask(height, width, num_masks='random'):
+def gen_mask(height, width, num_masks='random', min_l = 75, max_l = 175):
     mask = np.ones((height, width))
     num_masks = random.randint(3, 5) if num_masks == 'random' else num_masks
 
     for _ in range(num_masks):
-        mask_width = random.randint(75, 175)
-        mask_height = random.randint(75, 175)
+        mask_width = random.randint(min_l, max_l)
+        mask_height = random.randint(min_l, max_l)
 
         mask_x = random.randint(0, width-mask_width)
         mask_y = random.randint(0, height-mask_height)

@@ -12,22 +12,26 @@ from dataloader.masks import gen_mask
 
 
 class MaskedImgDataset(Dataset):
-    def __init__(self, path):
+    def __init__(self, path, num_masks='random', min_mask_l=75, max_mask_l=175):
         self.img_paths = list(glob.glob(os.path.join(path, '**', '*.jpg'), recursive=True))
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             transforms.Normalize(mean=0.5, std=0.5)
         ])
+        self.num_masks = num_masks
+        self.min_mask_l = min_mask_l
+        self.max_mask_l = max_mask_l
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
         target = cv2.imread(self.img_paths[idx])
+        target = cv2.resize(target, (256, 256))
         target = cv2.cvtColor(target, cv2.COLOR_BGR2RGB)
 
-        mask = gen_mask(256, 256, num_masks='random')
+        mask = gen_mask(256, 256, num_masks=self.num_masks, min_l=self.min_mask_l, max_l=self.max_mask_l)
         masked_img = (target * mask).astype(np.uint8)
 
         masked_img_4d = torch.Tensor(
